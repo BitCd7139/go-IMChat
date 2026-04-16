@@ -1,0 +1,30 @@
+[mainConfig]
+appName = "IMChat"
+host = "0.0.0.0"
+port = 8000
+
+[mysqlConfig]
+host = "localhost"
+port = 3306
+username = "root"
+password = "123456"
+database = "im_chat"
+
+[redisConfig]
+host = "localhost"
+port = 6379
+password = ""
+db = 0
+
+[kafkaConfig]
+messageMode = "channel"
+hostPort = "localhost:9092"
+loginTopic = "login"
+chatTopic = "chat"
+logoutTopic = "logout"
+partitions = 0
+timeout = 1
+
+[logConfig]
+logLevel = "debug"
+logPath = "./logs/app.log"

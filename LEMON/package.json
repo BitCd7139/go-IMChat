@@ -15,6 +15,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "regenerator-runtime": "^0.14.1",
     "vue": "^2.6.10"
   },
   "devDependencies": {

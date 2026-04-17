@@ -12,7 +12,7 @@ import lemonMessageImage from "./components/message/image";
 import lemonMessageFile from "./components/message/file";
 import lemonMessageEvent from "./components/message/event";
 
-import LemonIMUI from "./components/index";
+import LemonIMUI from "./components";
 import "./styles/common/index.styl";
 const version = "0.1";
 const components = [

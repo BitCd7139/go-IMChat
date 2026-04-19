@@ -92,7 +92,7 @@ export default {
             return;
           }
           try {
-            ElMessage.success(response.data.message);
+            ElMessage.success(response.data.msg);
             if (!response.data.data.avatar.startsWith("http")) {
               response.data.data.avatar =
                 store.state.backendUrl + response.data.data.avatar;
@@ -120,7 +120,7 @@ export default {
             console.log(error);
           }
         } else {
-          ElMessage.error(response.data.message);
+          ElMessage.error(response.data.msg);
         }
       } catch (error) {
         ElMessage.error(error);

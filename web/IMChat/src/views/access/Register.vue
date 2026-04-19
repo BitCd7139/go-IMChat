@@ -143,8 +143,8 @@ export default {
           data.registerData
         ); // 发送POST请求
         if (response.data.code == 200) {
-          ElMessage.success(response.data.message);
-          console.log(response.data.message);
+          ElMessage.success(response.data.msg);
+          console.log(response.data.msg);
           // 查看avatar前缀有没有http
           if (!response.data.data.avatar.startsWith("http")) {
             response.data.data.avatar =
@@ -170,8 +170,8 @@ export default {
           };
           router.push("/chat/sessionlist");
         } else {
-          ElMessage.error(response.data.message);
-          console.log(response.data.message);
+          ElMessage.error(response.data.msg);
+          console.log(response.data.msg);
         }
       } catch (error) {
         ElMessage.error(error);
@@ -213,11 +213,11 @@ export default {
       );
       console.log(rsp);
       if (rsp.data.code == 200) {
-        ElMessage.success(rsp.data.message);
+        ElMessage.success(rsp.data.msg);
       } else if (rsp.data.code == 400) {
-        ElMessage.warning(rsp.data.message);
+        ElMessage.warning(rsp.data.msg);
       } else {
-        ElMessage.error(rsp.data.message);
+        ElMessage.error(rsp.data.msg);
       }
     };
 

@@ -36,6 +36,11 @@ const routes = [
     component: () => import('../views/chat/contact/ContactList.vue')
   },
   {
+    path: '/chat/owninfo',
+    name: 'OwnInfo',
+    component: () => import('../views/chat/user/OwnInfo.vue')
+  },
+  {
     path: '/manager',
     name: 'Manager',
     component: () => import('../views/manager/Manager.vue')

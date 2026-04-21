@@ -163,8 +163,8 @@ func (u *userInfoService) Register(registerReq request.RegisterRequest) (string,
 	return "注册成功", registerResp, 0
 }
 
-func (u *userInfoService) GetUserInfo(userInfoReq request.UserInfoRequest) (string, *[]response.GetUserInfoResponse, int) {
-	var rsp []response.GetUserInfoResponse
+func (u *userInfoService) GetUserList(userInfoReq request.UserInfoRequest) (string, *[]response.GetUserListResponse, int) {
+	var rsp []response.GetUserListResponse
 	cacheKey := constants.USER_INFO_PREFIX + userInfoReq.OwnerId
 
 	// 1. 尝试从 Redis 读取
@@ -173,7 +173,7 @@ func (u *userInfoService) GetUserInfo(userInfoReq request.UserInfoRequest) (stri
 	if err == nil && len(redisData) > 0 {
 		// --- 关键点：将 Redis 的字符串(JSON) 转化回 Go 结构体 ---
 		for _, str := range redisData {
-			var item response.GetUserInfoResponse
+			var item response.GetUserListResponse
 			// 每一个 str 是一个独立用户的 JSON
 			if err := json.Unmarshal([]byte(str), &item); err == nil {
 				rsp = append(rsp, item)
@@ -186,14 +186,17 @@ func (u *userInfoService) GetUserInfo(userInfoReq request.UserInfoRequest) (stri
 	} else if err == nil {
 		// 2. 如果 Redis 没有，则查询数据库
 		var users []model.UserInfo
-		db := dao.GormDB.Unscoped().Where("uuid = ?", userInfoReq.OwnerId).Find(&users)
+		// select * from user_info where uuid in (select contact_id as uuid from user_contact where user_id = ownerId)
+		db := dao.GormDB.Table("user_info").Where("uuid IN (?)",
+			dao.GormDB.Table("user_contact").Select("contact_id").Where("user_id = ?", userInfoReq.OwnerId),
+		).Find(&users)
 		if db.Error != nil {
 			zlog.Error(db.Error.Error())
 			return constants.SYSTEM_ERROR, nil, -1
 		}
 
 		for _, user := range users {
-			rp := response.GetUserInfoResponse{
+			rp := response.GetUserListResponse{
 				Uuid:      user.Uuid,
 				Telephone: user.Telephone,
 				Nickname:  user.Nickname,
@@ -207,7 +210,6 @@ func (u *userInfoService) GetUserInfo(userInfoReq request.UserInfoRequest) (stri
 		zlog.Debug("从数据库获取用户列表成功")
 		for _, rp := range rsp {
 			individualJson, _ := json.Marshal(rp)
-			// 每一个用户作为集合的一个成员
 			err = myredis.SetKeyWithSets(cacheKey, string(individualJson), 24*time.Hour)
 		}
 		if err != nil {

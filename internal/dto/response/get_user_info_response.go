@@ -1,6 +1,6 @@
 package response
 
-type GetUserInfoResponse struct {
+type GetUserListResponse struct {
 	Uuid      string `json:"uuid"`
 	Nickname  string `json:"nickname"`
 	Telephone string `json:"telephone"`

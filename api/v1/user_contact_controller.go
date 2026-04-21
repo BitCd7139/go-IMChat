@@ -5,6 +5,8 @@ import (
 	"IMChat/internal/service/gorm"
 	"IMChat/pkg/constants"
 	"IMChat/pkg/zlog"
+	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -89,6 +91,121 @@ func GetUserList(c *gin.Context) {
 		JsonBack(c, constants.SYSTEM_ERROR, 500, nil)
 		return
 	}
-	message, data, ret := gorm.UserInfoService.GetUserInfo(userListReq)
+	message, data, ret := gorm.UserInfoService.GetUserList(userListReq)
 	JsonBack(c, message, ret, data)
+}
+
+func GetContactInfo(c *gin.Context) {
+	var getContactReq request.GetContactInfoRequest
+	if err := c.BindJSON(&getContactReq); err != nil {
+		zlog.Error(err.Error())
+		JsonBack(c, constants.SYSTEM_ERROR, 500, nil)
+		return
+	}
+	log.Println(getContactReq)
+	message, contactInfo, ret := gorm.UserContactService.GetContactInfo(getContactReq.ContactId)
+	JsonBack(c, message, ret, contactInfo)
+}
+
+// LoadMyJoinedGroup 获取我加入的群聊
+func LoadMyJoinedGroup(c *gin.Context) {
+	var loadMyJoinedGroupReq request.OwnlistRequest
+	if err := c.BindJSON(&loadMyJoinedGroupReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, groupList, ret := gorm.UserContactService.LoadMyJoinedGroup(loadMyJoinedGroupReq.OwnerId)
+	JsonBack(c, message, ret, groupList)
+}
+
+func DeleteContact(c *gin.Context) {
+	var deleteContactReq request.DeleteContactRequest
+	if err := c.BindJSON(&deleteContactReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := gorm.UserContactService.DeleteContact(deleteContactReq.OwnerId, deleteContactReq.ContactId)
+	JsonBack(c, message, ret, nil)
+}
+
+// RefuseContactApply 拒绝联系人申请
+func RefuseContactApply(c *gin.Context) {
+	var passContactApplyReq request.PassContactApplyRequest
+	if err := c.BindJSON(&passContactApplyReq); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := gorm.UserContactService.RefuseContactApply(passContactApplyReq.OwnerId, passContactApplyReq.ContactId)
+	JsonBack(c, message, ret, nil)
+}
+
+func BlackContact(c *gin.Context) {
+	var req request.BlackContactRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := gorm.UserContactService.BlackContact(req.OwnerId, req.ContactId)
+	JsonBack(c, message, ret, nil)
+}
+
+// CancelBlackContact 解除拉黑联系人
+func CancelBlackContact(c *gin.Context) {
+	var req request.BlackContactRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := gorm.UserContactService.CancelBlackContact(req.OwnerId, req.ContactId)
+	JsonBack(c, message, ret, nil)
+}
+
+// GetAddGroupList 获取新的群聊申请列表
+func GetAddGroupList(c *gin.Context) {
+	var req request.AddGroupListRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, data, ret := gorm.UserContactService.GetAddGroupList(req.GroupId)
+	JsonBack(c, message, ret, data)
+}
+
+// BlackApply 拉黑申请
+func BlackApply(c *gin.Context) {
+	var req request.BlackApplyRequest
+	if err := c.BindJSON(&req); err != nil {
+		zlog.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code":    500,
+			"message": constants.SYSTEM_ERROR,
+		})
+		return
+	}
+	message, ret := gorm.UserContactService.BlackApply(req.OwnerId, req.ContactId)
+	JsonBack(c, message, ret, nil)
 }

@@ -383,7 +383,7 @@
   }
   
   .el-menu {
-    background-color: rgb(252, 210.9, 210.9);
+    background-color: rgb(2, 210.9, 210.9);
     width: 100%;
   }
   

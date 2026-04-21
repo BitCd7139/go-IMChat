@@ -1,5 +1,5 @@
 package request
 
-type WsLogoutRequest struct {
+type UserInfoRequest struct {
 	OwnerId string `json:"owner_id"`
 }

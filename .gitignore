@@ -1,0 +1,15 @@
+# 忽略整个数据目录
+data/
+# 如果你只想忽略 mysql 文件夹
+# data/mysql/
+
+# 忽略日志和缓存
+*.log
+tmp/
+
+# 其他常见的忽略项（根据你的项目语言，如 Go/Vue）
+bin/
+node_modules/
+dist/
+.idea/
+.vscode/

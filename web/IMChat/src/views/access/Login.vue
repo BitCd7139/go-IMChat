@@ -11,6 +11,7 @@
         :model="loginData"
         label-width="70px"
         class="demo-dynamic"
+        @submit.prevent="handleLogin"
       >
         <el-form-item
           prop="telephone"
@@ -23,8 +24,13 @@
             },
           ]"
         >
-          <el-input v-model="loginData.telephone" />
+        <el-input 
+            v-model="loginData.telephone" 
+            name="username"
+            autocomplete="username"
+          />
         </el-form-item>
+
         <el-form-item
           prop="password"
           label="密码"
@@ -36,14 +42,23 @@
             },
           ]"
         >
-          <el-input type="password" v-model="loginData.password" />
+        <el-input 
+            type="password" 
+            v-model="loginData.password" 
+            name="password"
+            autocomplete="current-password"
+            show-password
+          />
         </el-form-item>
-      </el-form>
-      <div class="login-button-container">
-        <el-button type="primary" class="login-btn" @click="handleLogin"
+
+        <div class="login-button-container">
+        <el-button type="primary" class="login-btn" native-type="submit"
           >登录</el-button
         >
       </div>
+
+      </el-form>
+
 
       <div class="go-register-button-container">
         <button class="go-register-btn" @click="handleRegister">注册</button>

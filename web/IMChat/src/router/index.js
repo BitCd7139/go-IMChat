@@ -19,6 +19,26 @@ const routes = [
     path: '/chat/sessionList',
     name: 'SessionList',
     component: () => import('../views/chat/session/SessionList.vue')
+  },
+  {
+    path: '/chat/:id',
+    name: 'ContactChat',
+    component: () => import('../views/chat/contact/ContactChat.vue') 
+  },
+  {
+    path: '/chat/sessionList',
+    name: 'SessionList',
+    component: () => import('../views/chat/session/SessionList.vue')
+  },
+  {
+    path: '/chat/contactlist',
+    name: 'ContactList',
+    component: () => import('../views/chat/contact/ContactList.vue')
+  },
+  {
+    path: '/manager',
+    name: 'Manager',
+    component: () => import('../views/manager/Manager.vue')
   }
 ]
 

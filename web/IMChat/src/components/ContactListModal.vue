@@ -263,7 +263,7 @@
                     >
                       <template #trigger>
                         <el-button
-                          style="background-color: rgb(252, 210.9, 210.9)"
+                          style="background-color: rgb(68, 172, 87);"
                           >上传图片</el-button
                         >
                       </template>
@@ -298,7 +298,8 @@
           </el-sub-menu>
           <el-menu-item
             v-for="user in contactUserList"
-            :key="user.user_id"
+            :key="user.uuid"
+            :index="user.uuid"
             @click="handleToChatUser(user)"
             class="contactlist-user-menu-item"
           >
@@ -309,7 +310,7 @@
             >
               <div class="contactlist-user-item">
                 <img :src="user.avatar" class="contactlist-user-avatar" />
-                {{ user.user_name }}
+                {{ user.nickname }}
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -336,11 +337,12 @@
           </el-sub-menu>
           <el-menu-item
             v-for="group in myGroupList"
-            :key="group.group_id"
+            :key="group.uuid"
+            :index="group.uuid"
             @click="handleToChatGroup(group)"
           >
             <img :src="group.avatar" class="contactlist-avatar" />
-            {{ group.group_name }}
+            {{ group.name }}
           </el-menu-item>
         </el-menu>
         <el-menu
@@ -356,11 +358,12 @@
           </el-sub-menu>
           <el-menu-item
             v-for="group in myJoinedGroupList"
-            :key="group.group_id"
+            :key="group.uuid"
+            :index="group.uuid"
             @click="handleToChatGroup(group)"
           >
             <img :src="group.avatar" class="contactlist-avatar" />
-            {{ group.group_name }}
+            {{ group.name }}
           </el-menu-item>
         </el-menu>
       </div>
@@ -485,7 +488,7 @@ export default {
         ElMessage.error("请输入申请用户/群组id");
         return;
       }
-      if (data.applyContactReq.contact_id[0] == "G") {
+      if (data.applyContactReq.contact_id[0] == "G" || data.applyContactReq.contact_id[0] == "g") {
         handleApplyGroup();
       } else {
         handleApplyContact();
@@ -526,12 +529,12 @@ export default {
         );
         console.log(rsp);
         if (rsp.data.code == 200) {
-          if (rsp.data.message == "申请成功") {
+          if (rsp.data.msg == "申请成功") {
             data.isApplyContactModalVisible = false;
             ElMessage.success("申请成功");
             return;
           } else {
-            ElMessage.error(rsp.data.message);
+            ElMessage.error(rsp.data.msg);
           }
         } else {
           ElMessage.error("申请失败");
@@ -549,13 +552,13 @@ export default {
         );
         console.log(rsp);
         if (rsp.data.code == 200) {
-          if (rsp.data.message == "申请成功") {
+          if (rsp.data.msg == "申请成功") {
             data.isApplyContactModalVisible = false;
             ElMessage.success("申请成功");
             return;
           }
         }
-        ElMessage.error(rsp.data.message);
+        ElMessage.error(rsp.data.msg);
       } catch (error) {
         console.error(error);
       }
@@ -636,7 +639,7 @@ export default {
       try {
         const req = {
           send_id: data.userInfo.uuid,
-          receive_id: user.user_id,
+          receive_id: user.uuid,
         };
         const rsp = await axios.post(
           store.state.backendUrl + "/session/checkOpenSessionAllowed",
@@ -644,14 +647,14 @@ export default {
         );
         if (rsp.data.code == 200) {
           if (rsp.data.data == true) {
-            router.push("/chat/" + user.user_id);
+            router.push("/chat/" + user.uuid);
           } else {
-            ElMessage.warning(rsp.data.message);
-            console.error(rsp.data.message);
+            ElMessage.warning(rsp.data.msg);
+            console.error(rsp.data.msg);
           }
         } else {
-          ElMessage.error(rsp.data.message);
-          console.error(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
+          console.error(rsp.data.msg);
         }
       } catch (error) {
         ElMessage.error(error);
@@ -673,16 +676,16 @@ export default {
           if (rsp.data.data == true) {
             router.push("/chat/" + group.group_id);
           } else {
-            ElMessage.warning(rsp.data.message);
-            console.error(rsp.data.message);
+            ElMessage.warning(rsp.data.msg);
+            console.error(rsp.data.msg);
           }
         } else {
           if (rsp.data.code == 400) {
-            ElMessage.warning(rsp.data.message);
-            console.error(rsp.data.message);
+            ElMessage.warning(rsp.data.msg);
+            console.error(rsp.data.msg);
           } else {
-            ElMessage.error(rsp.data.message);
-            console.error(rsp.data.message);
+            ElMessage.error(rsp.data.msg);
+            console.error(rsp.data.msg);
           }
         }
       } catch (error) {
@@ -728,12 +731,12 @@ export default {
         );
         console.log(rsp);
         if (rsp.data.code == 200) {
-          ElMessage.success(rsp.data.message);
+          ElMessage.success(rsp.data.msg);
           data.newContactList = data.newContactList.filter(
             (c) => c.contact_id !== contactId
           );
         } else {
-          ElMessage.error(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
         }
       } catch (error) {
         console.error(error);
@@ -751,10 +754,10 @@ export default {
         );
         console.log(rsp);
         if (rsp.data.code == 200) {
-          ElMessage.success(rsp.data.message);
+          ElMessage.success(rsp.data.msg);
           data.isApplyContactModalVisible = false;
         } else {
-          ElMessage.error(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
         }
       } catch (error) {
         console.error(error);
@@ -772,17 +775,17 @@ export default {
         );
         console.log(rsp);
         if (rsp.data.code == 200) {
-          ElMessage.success(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.success(rsp.data.msg);
+          console.log(rsp.data.msg);
           data.newContactList = data.newContactList.filter(
             (c) => c.contact_id !== contactId
           );
         } else if (rsp.data.code == 400) {
-          ElMessage.warning(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.warning(rsp.data.msg);
+          console.log(rsp.data.msg);
         } else if (rsp.data.code == 500) {
-          ElMessage.error(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
+          console.log(rsp.data.msg);
         }
       } catch (error) {
         console.error(error);
@@ -799,17 +802,17 @@ export default {
           req
         );
         if (rsp.data.code == 200) {
-          ElMessage.success(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.success(rsp.data.msg);
+          console.log(rsp.data.msg);
           data.newContactList = data.newContactList.filter(
             (c) => c.contact_id !== contactId
           );
         } else if (rsp.data.code == 400) {
-          ElMessage.warning(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.warning(rsp.data.msg);
+          console.log(rsp.data.msg);
         } else if (rsp.data.code == 500) {
-          ElMessage.error(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
+          console.log(rsp.data.msg);
         }
       } catch (error) {
         ElMessage.error(error);
@@ -820,21 +823,21 @@ export default {
       try {
         const req = {
           owner_id: data.userInfo.uuid,
-          contact_id: user.user_id,
+          contact_id: user.uuid,
         };
         const rsp = await axios.post(
           store.state.backendUrl + "/contact/cancelBlackContact",
           req
         );
         if (rsp.data.code == 200) {
-          ElMessage.success(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.success(rsp.data.msg);
+          console.log(rsp.data.msg);
         } else if (rsp.data.code == 400) {
-          ElMessage.warning(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.warning(rsp.data.msg);
+          console.log(rsp.data.msg);
         } else if (rsp.data.code == 500) {
-          ElMessage.error(rsp.data.message);
-          console.log(rsp.data.message);
+          ElMessage.error(rsp.data.msg);
+          console.log(rsp.data.msg);
         }
       } catch (error) {
         ElMessage.error(error);
@@ -898,7 +901,7 @@ export default {
 }
 
 .create-group-btn {
-  background-color: rgb(252, 210.9, 210.9);
+  background-color: rgb(68, 172, 87);;
   cursor: pointer;
   border: none;
   height: 100%;
@@ -916,7 +919,7 @@ export default {
 }
 
 .el-menu {
-  background-color: rgb(252, 210.9, 210.9);
+  background-color: rgb(68, 172, 87);;
   width: 101%;
 }
 

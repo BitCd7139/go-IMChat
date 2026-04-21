@@ -152,9 +152,9 @@ export default {
       );
       if (rsp.data.code == 200) {
         router.push("/login");
-        ElMessage.success(rsp.data.message);
+        ElMessage.success(rsp.data.msg);
       } else {
-        ElMessage.error(rsp.data.message);
+        ElMessage.error(rsp.data.msg);
       }
     };
     const handleToOwnInfo = () => {

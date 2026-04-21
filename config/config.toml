@@ -22,8 +22,12 @@ hostPort = "localhost:9092"
 loginTopic = "login"
 chatTopic = "chat"
 logoutTopic = "logout"
-partitions = 0
+partitions = 1
 timeout = 1
+
+[staticSrcConfig]
+staticAvatarPath = "./static/avatars"
+staticFilePath = "./static/files"
 
 [logConfig]
 logLevel = "debug"

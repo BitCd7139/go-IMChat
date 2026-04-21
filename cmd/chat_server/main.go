@@ -18,9 +18,9 @@ func main() {
 	host := conf.MainConfig.Host
 	port := conf.MainConfig.Port
 	kafkaConfig := conf.KafkaConfig
-	//if kafkaConfig.MessageMode == "kafka" {
-	//	kafka.
-	//}
+	if kafkaConfig.MessageMode == "kafka" {
+		//kafka.
+	}
 	if kafkaConfig.MessageMode == "channel" {
 		//go chat.ChatServer.Start()
 	} else {
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	go func() {
-		if err := https_server.GE.RunTLS(fmt.Sprintf("%s:%d", host, port), "pkg/ssl/127.0.0.1+2.pem", "pkg/ssl/127.0.0.1+2-key.pem"); err != nil {
+		if err := https_server.GE.RunTLS(fmt.Sprintf("%s:%d", host, port), "pkg/ssl/localhost+2.pem", "pkg/ssl/localhost+2-key.pem"); err != nil {
 			zlog.Fatal("server running fault")
 			return
 		}

@@ -52,4 +52,16 @@ const router = createRouter({
   routes
 })
 
+router.beforeEach((to, from, next) => {
+  if (!store.state.userInfo.uuid) {
+    if (to.path === '/login' || to.path === '/register' || to.path === '/smsLogin') {
+      next()
+      return
+    }
+    next('/login')
+  } else {
+    next()
+  }
+})
+
 export default router

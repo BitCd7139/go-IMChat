@@ -1,6 +1,6 @@
-package respond
+package response
 
-type AVMessageRespond struct {
+type AVMessageResponse struct {
 	SendId     string `json:"send_id"`
 	SendName   string `json:"send_name"`
 	SendAvatar string `json:"send_avatar"`

@@ -1,10 +1,10 @@
 package v1
 
 import (
+	"IMChat/internal/dto/request"
+	"IMChat/internal/service/gorm"
+	"IMChat/pkg/constants"
 	"github.com/gin-gonic/gin"
-	"kama_chat_server/internal/dto/request"
-	"kama_chat_server/internal/service/gorm"
-	"kama_chat_server/pkg/constants"
 	"net/http"
 )
 

@@ -2,10 +2,10 @@ package main
 
 import (
 	"IMChat/internal/config"
-	"IMChat/internal/https_server"
-	//"IMChat/internal/service/chat"
-	//"IMChat/internal/service/kafka"
-	//myredis "IMChat/internal/service/redis"
+	"IMChat/internal/server/http_server"
+	"IMChat/internal/service/chat"
+	myredis "IMChat/internal/service/redis"
+
 	"IMChat/pkg/zlog"
 	"fmt"
 	"os"
@@ -17,20 +17,20 @@ func main() {
 	conf := config.GetConfig()
 	host := conf.MainConfig.Host
 	port := conf.MainConfig.Port
-	kafkaConfig := conf.KafkaConfig
-	if kafkaConfig.MessageMode == "kafka" {
-		//kafka.
+	messageMode := conf.KafkaConfig.MessageMode
+
+	chatLoopStarted := false
+	if messageMode == "channel" || messageMode == "redis_pubsub" {
+		go chat.ChatServer.Start()
+		chatLoopStarted = true
 	}
-	if kafkaConfig.MessageMode == "channel" {
-		//go chat.ChatServer.Start()
-	} else {
-		//go chat.KafkaChatServer.Start();
+	if messageMode == "redis_pubsub" {
+		chat.StartPubSubGateway()
 	}
 
 	go func() {
-		if err := https_server.GE.RunTLS(fmt.Sprintf("%s:%d", host, port), "pkg/ssl/localhost+2.pem", "pkg/ssl/localhost+2-key.pem"); err != nil {
+		if err := http_server.GE.RunTLS(fmt.Sprintf("%s:%d", host, port), "pkg/ssl/localhost+2.pem", "pkg/ssl/localhost+2-key.pem"); err != nil {
 			zlog.Fatal("server running fault")
-			return
 		}
 	}()
 
@@ -39,21 +39,21 @@ func main() {
 
 	<-quit
 
-	if kafkaConfig.MessageMode == "kafka" {
-		//kafka.KafkaService.KafkaClose()
+	if messageMode == "redis_pubsub" {
+		chat.StopPubSubGateway()
 	}
 
-	//chat.ChatServer.Close()
+	if chatLoopStarted {
+		chat.ChatServer.Close()
+	}
 
 	zlog.Info("关闭服务器...")
 
-	// 删除所有Redis键
-	//if err := myredis.DeleteAllRedisKeys(); err != nil {
-	//	zlog.Error(err.Error())
-	//} else {
-	//	zlog.Info("所有Redis键已删除")
-	//}
+	if err := myredis.DeleteAllRedisKeys(); err != nil {
+		zlog.Error(err.Error())
+	} else {
+		zlog.Info("所有Redis键已删除")
+	}
 
 	zlog.Info("服务器已关闭")
-
 }

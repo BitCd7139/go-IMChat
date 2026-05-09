@@ -250,3 +250,52 @@ func FindKeyWithSets(key string) ([]string, error) {
 	}
 	return values, nil
 }
+
+func PublicRedisKey(ctx context.Context, key string, value string) (string, error) {
+	err := redisClient.Publish(ctx, key, value).Err()
+	if err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
+// PublishCtx publishes payload to a Redis Pub/Sub channel.
+func PublishCtx(ctx context.Context, channel, payload string) error {
+	return redisClient.Publish(ctx, channel, payload).Err()
+}
+
+const presenceUserKeyPrefix = "presence:user:"
+
+// NodeInboxChannel is the per-node channel: chat:node:{serverId}.
+func NodeInboxChannel(serverID string) string {
+	return "chat:node:" + serverID
+}
+
+func userPresenceKey(userID string) string {
+	return presenceUserKeyPrefix + userID
+}
+
+// SetUserPresence records which serverId holds the user's WebSocket (with TTL).
+func SetUserPresence(userID, serverID string, ttl time.Duration) error {
+	return redisClient.Set(ctx, userPresenceKey(userID), serverID, ttl).Err()
+}
+
+// GetUserPresenceServerID returns the server id string or redis.Nil if absent.
+func GetUserPresenceServerID(userID string) (string, error) {
+	return redisClient.Get(ctx, userPresenceKey(userID)).Result()
+}
+
+// DelUserPresence removes routing for a disconnected user.
+func DelUserPresence(userID string) error {
+	return redisClient.Del(ctx, userPresenceKey(userID)).Err()
+}
+
+// RefreshUserPresenceTTL extends TTL on heartbeat (key must already exist).
+func RefreshUserPresenceTTL(userID string, ttl time.Duration) error {
+	return redisClient.Expire(ctx, userPresenceKey(userID), ttl).Err()
+}
+
+// Subscribe wraps redis PubSub for the given channels (caller must Close the PubSub).
+func Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
+	return redisClient.Subscribe(ctx, channels...)
+}

@@ -2,6 +2,7 @@
 appName = "IMChat"
 host = "0.0.0.0"
 port = 8000
+serverId = 1
 
 [mysqlConfig]
 host = "localhost"
@@ -17,6 +18,7 @@ password = ""
 db = 0
 
 [kafkaConfig]
+# messageMode: channel (单机), redis_pubsub (多节点), kafka
 messageMode = "channel"
 hostPort = "localhost:9092"
 loginTopic = "login"

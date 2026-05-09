@@ -1,6 +1,6 @@
-package respond
+package response
 
-type UserSessionListRespond struct {
+type UserSessionListResponse struct {
 	SessionId string `json:"session_id"`
 	Avatar    string `json:"avatar"`
 	UserId    string `json:"user_id"`

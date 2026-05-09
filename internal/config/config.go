@@ -15,9 +15,10 @@ type MysqlConfig struct {
 }
 
 type MainConfig struct {
-	AppName string `toml:"appName"`
-	Host    string `toml:"host"`
-	Port    int    `toml:"port"`
+	AppName  string `toml:"appName"`
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	ServerId int    `toml:"serverId"`
 }
 
 type RedisConfig struct {

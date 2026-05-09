@@ -1,22 +1,22 @@
 package gorm
 
 import (
+	"IMChat/internal/dao"
+	"IMChat/internal/dto/request"
+	"IMChat/internal/dto/response"
+	"IMChat/internal/model"
+	myredis "IMChat/internal/service/redis"
+	"IMChat/pkg/constants"
+	"IMChat/pkg/enum/contact/contact_status_enum"
+	"IMChat/pkg/enum/group_info/group_status_enum"
+	"IMChat/pkg/enum/user_info/user_status_enum"
+	"IMChat/pkg/util/random"
+	"IMChat/pkg/zlog"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
-	"kama_chat_server/internal/dao"
-	"kama_chat_server/internal/dto/request"
-	"kama_chat_server/internal/dto/respond"
-	"kama_chat_server/internal/model"
-	myredis "kama_chat_server/internal/service/redis"
-	"kama_chat_server/pkg/constants"
-	"kama_chat_server/pkg/enum/contact/contact_status_enum"
-	"kama_chat_server/pkg/enum/group_info/group_status_enum"
-	"kama_chat_server/pkg/enum/user_info/user_status_enum"
-	"kama_chat_server/pkg/util/random"
-	"kama_chat_server/pkg/zlog"
 	"time"
 )
 
@@ -118,7 +118,7 @@ func (s *sessionService) CheckOpenSessionAllowed(sendId, receiveId string) (stri
 
 // OpenSession 打开会话
 func (s *sessionService) OpenSession(req request.OpenSessionRequest) (string, string, int) {
-	rspString, err := myredis.GetKeyWithPrefixNilIsErr("session_" + req.SendId + "_" + req.ReceiveId)
+	rspString, err := myredis.GetKeyWithPrefixNilError("session_" + req.SendId + "_" + req.ReceiveId)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			var session model.Session
@@ -153,8 +153,8 @@ func (s *sessionService) OpenSession(req request.OpenSessionRequest) (string, st
 }
 
 // GetUserSessionList 获取用户会话列表
-func (s *sessionService) GetUserSessionList(ownerId string) (string, []respond.UserSessionListRespond, int) {
-	rspString, err := myredis.GetKeyNilIsErr("session_list_" + ownerId)
+func (s *sessionService) GetUserSessionList(ownerId string) (string, []response.UserSessionListResponse, int) {
+	rspString, err := myredis.GetKeyNilError("session_list_" + ownerId)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			var sessionList []model.Session
@@ -167,10 +167,10 @@ func (s *sessionService) GetUserSessionList(ownerId string) (string, []respond.U
 					return constants.SYSTEM_ERROR, nil, -1
 				}
 			}
-			var sessionListRsp []respond.UserSessionListRespond
+			var sessionListRsp []response.UserSessionListResponse
 			for i := 0; i < len(sessionList); i++ {
 				if sessionList[i].ReceiveId[0] == 'U' {
-					sessionListRsp = append(sessionListRsp, respond.UserSessionListRespond{
+					sessionListRsp = append(sessionListRsp, response.UserSessionListResponse{
 						SessionId: sessionList[i].Uuid,
 						Avatar:    sessionList[i].Avatar,
 						UserId:    sessionList[i].ReceiveId,
@@ -191,7 +191,7 @@ func (s *sessionService) GetUserSessionList(ownerId string) (string, []respond.U
 			return constants.SYSTEM_ERROR, nil, -1
 		}
 	}
-	var rsp []respond.UserSessionListRespond
+	var rsp []response.UserSessionListResponse
 	if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
 		zlog.Error(err.Error())
 	}
@@ -199,8 +199,8 @@ func (s *sessionService) GetUserSessionList(ownerId string) (string, []respond.U
 }
 
 // GetGroupSessionList 获取群聊会话列表
-func (s *sessionService) GetGroupSessionList(ownerId string) (string, []respond.GroupSessionListRespond, int) {
-	rspString, err := myredis.GetKeyNilIsErr("group_session_list_" + ownerId)
+func (s *sessionService) GetGroupSessionList(ownerId string) (string, []response.GroupSessionListResponse, int) {
+	rspString, err := myredis.GetKeyNilError("group_session_list_" + ownerId)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			var sessionList []model.Session
@@ -213,10 +213,10 @@ func (s *sessionService) GetGroupSessionList(ownerId string) (string, []respond.
 					return constants.SYSTEM_ERROR, nil, -1
 				}
 			}
-			var sessionListRsp []respond.GroupSessionListRespond
+			var sessionListRsp []response.GroupSessionListResponse
 			for i := 0; i < len(sessionList); i++ {
 				if sessionList[i].ReceiveId[0] == 'G' {
-					sessionListRsp = append(sessionListRsp, respond.GroupSessionListRespond{
+					sessionListRsp = append(sessionListRsp, response.GroupSessionListResponse{
 						SessionId: sessionList[i].Uuid,
 						Avatar:    sessionList[i].Avatar,
 						GroupId:   sessionList[i].ReceiveId,
@@ -237,7 +237,7 @@ func (s *sessionService) GetGroupSessionList(ownerId string) (string, []respond.
 			return constants.SYSTEM_ERROR, nil, -1
 		}
 	}
-	var rsp []respond.GroupSessionListRespond
+	var rsp []response.GroupSessionListResponse
 	if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
 		zlog.Error(err.Error())
 	}

@@ -1,6 +1,6 @@
-package respond
+package response
 
-type GroupSessionListRespond struct {
+type GroupSessionListResponse struct {
 	SessionId string `json:"session_id"`
 	GroupName string `json:"group_name"`
 	GroupId   string `json:"group_id"`

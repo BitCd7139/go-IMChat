@@ -1,9 +1,10 @@
-package https_server
+package http_server
 
 import (
 	v1 "IMChat/api/v1"
 	"IMChat/internal/config"
 	"IMChat/pkg/ssl"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )

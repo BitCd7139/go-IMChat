@@ -2,21 +2,21 @@ package chat
 
 import (
 	"IMChat/internal/config"
-	"IMChat/internal/dao"
-	//"IMChat/internal/dto/request"
-	"IMChat/internal/model"
+	"IMChat/internal/dto/request"
+	"strconv"
+
 	"IMChat/pkg/constants"
-	"IMChat/pkg/enum/message/message_status_enum"
 	"IMChat/pkg/zlog"
 	"context"
-	//"encoding/json"
-	//"log"
+	"encoding/json"
 	"net/http"
-	//"strconv"
 	"time"
 
+	mykafka "IMChat/internal/service/kafka"
+	myredis "IMChat/internal/service/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/segmentio/kafka-go"
 	//"github.com/segmentio/kafka-go"
 )
 
@@ -26,10 +26,12 @@ type MessageBack struct {
 }
 
 type Client struct {
-	Conn     *websocket.Conn
-	Uuid     string
-	SendTo   chan []byte
-	SendBack chan *MessageBack
+	Conn          *websocket.Conn
+	Uuid          string
+	SendTo        chan []byte
+	SendBack      chan *MessageBack
+	LastHeartbeat time.Time
+	ServerId      string
 }
 
 var upgrader = websocket.Upgrader{
@@ -40,80 +42,112 @@ var upgrader = websocket.Upgrader{
 
 var ctx = context.Background()
 
-var messageMode = config.GetConfig().KafkaConfig.MessageMode
-
 func (c *Client) Read() {
-	zlog.Debug("ws read goroutine begin")
+	defer func() {
+		ClientLogout(c.Uuid)
+	}()
+
 	for {
-		//_, jsonMessage, err := c.Conn.ReadMessage()
-		//if err != nil {
-		//	zlog.Error(err.Error())
-		//	return
-		//} else {
-		//	var message = request.ChatMessageRequest{}
-		//	if err := json.Unmarshal(jsonMessage, &message); err != nil {
-		//		zlog.Error(err.Error())
-		//	}
-		//	log.Println("接受到消息为: ", jsonMessage)
-		//	if messageMode == "channel" {
-		//		// 如果server的转发channel没满，先把sendto中的给transmit
-		//		for len(ChatServer.Transmit) < constants.CHANNEL_SIZE && len(c.SendTo) > 0 {
-		//			sendToMessage := <-c.SendTo
-		//			ChatServer.SendMessageToTransmit(sendToMessage)
-		//		}
-		//		// 如果server没满，sendto空了，直接给server的transmit
-		//		if len(ChatServer.Transmit) < constants.CHANNEL_SIZE {
-		//			ChatServer.SendMessageToTransmit(jsonMessage)
-		//		} else if len(c.SendTo) < constants.CHANNEL_SIZE {
-		//			// 如果server满了，直接塞sendto
-		//			c.SendTo <- jsonMessage
-		//		} else {
-		//			// 否则考虑加宽channel size，或者使用kafka
-		//			if err := c.Conn.WriteMessage(websocket.TextMessage, []byte("由于目前同一时间过多用户发送消息，消息发送失败，请稍后重试")); err != nil {
-		//				zlog.Error(err.Error())
-		//			}
-		//		}
-		//	} else {
-		//		if err := myKafka.KafkaService.ChatWriter.WriteMessages(ctx, kafka.Message{
-		//			Key:   []byte(strconv.Itoa(config.GetConfig().KafkaConfig.Partition)),
-		//			Value: jsonMessage,
-		//		}); err != nil {
-		//			zlog.Error(err.Error())
-		//		}
-		//		zlog.Info("已发送消息：" + string(jsonMessage))
-		//	}
-		//}
+		err := c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		if err != nil {
+			// 没有心跳
+			return
+		}
+
+		_, jsonMessage, err := c.Conn.ReadMessage()
+		if err != nil {
+			zlog.Error(err.Error())
+			return
+		}
+
+		// 处理心跳
+		if string(jsonMessage) == "ping" {
+			c.LastHeartbeat = time.Now()
+			if config.GetConfig().KafkaConfig.MessageMode == "redis_pubsub" && c.Uuid != "" {
+				_ = myredis.RefreshUserPresenceTTL(c.Uuid, userPresenceTTL)
+			}
+			if err := c.Conn.WriteMessage(websocket.TextMessage, []byte("pong")); err != nil {
+				zlog.Error(err.Error())
+				return
+			}
+			continue
+		}
+
+		// 处理业务消息
+		var message request.ChatMessageRequest
+		if err := json.Unmarshal(jsonMessage, &message); err != nil {
+			zlog.Error("JSON解析失败: " + err.Error())
+			continue
+		}
+
+		// 把消息丢给“消息中心”（Kafka/Redis PubSub）
+		err = Processor.Process(c, jsonMessage)
+		if err != nil {
+			zlog.Error("消息处理失败: " + err.Error())
+			continue
+		}
 	}
 }
 
 func (c *Client) Write() {
 	zlog.Debug("ws write goroutine begin")
+
 	defer func() {
-		err := c.Conn.Close()
-		if err != nil {
-			zlog.Error(err.Error())
-			return
-		}
+		zlog.Debug("ws write goroutine exit")
+		// 确保退出时关闭连接
+		_ = c.Conn.Close()
 	}()
 
-	for messageBack := range c.SendBack {
-		err := c.Conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-		if err != nil {
-			zlog.Error(err.Error())
-			return
-		}
-
-		err = c.Conn.WriteMessage(websocket.TextMessage, messageBack.Message)
-		if err != nil {
-			zlog.Error(err.Error())
-			return
-		}
-
-		go func(uuid string) {
-			if res := dao.GormDB.Model(&model.Message{}).Where("uuid = ?", uuid).Update("status", message_status_enum.Sent); res.Error != nil {
-				zlog.Error(res.Error.Error())
+	for {
+		select {
+		case messageBack, ok := <-c.SendBack:
+			// 1. 处理 Channel 被关闭的情况 (优雅退出)
+			if !ok {
+				// 发送标准的 WebSocket Close 帧
+				_ = c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
 			}
-		}(messageBack.Uuid)
+
+			// 2. 设置写入超时时间
+			if err := c.Conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
+				zlog.Error("设置写超时失败: " + err.Error())
+				return // 此时 return 会触发 defer 里的 Close
+			}
+
+			// 3. 执行物理写入
+			if err := c.Conn.WriteMessage(websocket.TextMessage, messageBack.Message); err != nil {
+				zlog.Error("消息发送失败: " + err.Error())
+				return // 发送失败通常意味着连接已死，直接退出
+			}
+
+			// 4. 【分布式改造点】处理消息状态更新，抛给异步任务或 Kafka
+			c.handleMessageAck(messageBack.Uuid)
+		}
+	}
+}
+
+// 独立出一个方法处理已送达的状态更新
+func (c *Client) handleMessageAck(uuid string) {
+	// 方案A (强烈推荐分布式用法)：把 ACK 扔给 Kafka
+	if Processor.Mode == "kafka" {
+		ackMsg := map[string]string{"uuid": uuid, "status": "sent"}
+		ackBytes, _ := json.Marshal(ackMsg)
+		err := mykafka.KafkaService.AckWriter.WriteMessages(context.Background(), kafka.Message{
+			Key:   []byte(uuid),
+			Value: ackBytes,
+		})
+		if err != nil {
+			zlog.Error(err.Error())
+			return
+		}
+	} else {
+		select {
+		case Processor.LocalServer.MsgAckChan <- uuid:
+			// 成功投递给后台 DB 更新 Worker
+		default:
+			zlog.Warn("DB更新Worker繁忙，ACK可能延迟")
+			// 可以选择丢弃或开启新的备用逻辑
+		}
 	}
 }
 
@@ -129,12 +163,12 @@ func NewClientInit(c *gin.Context, clientId string) {
 		Uuid:     clientId,
 		SendTo:   make(chan []byte, constants.CHANNEL_SIZE),
 		SendBack: make(chan *MessageBack, constants.CHANNEL_SIZE),
+		ServerId: strconv.Itoa(config.GetConfig().ServerId),
 	}
-	if kafkaClient.MessageMode == "channel" {
-		//
-	} else {
-		//kafkaClient
+	if kafkaClient.MessageMode == "channel" || kafkaClient.MessageMode == "redis_pubsub" {
+		Processor.LocalServer.SendClientToLogin(client)
 	}
+
 	go client.Read()
 	go client.Write()
 	zlog.Info("ws连接成功: " + clientId + "\n")
@@ -142,12 +176,10 @@ func NewClientInit(c *gin.Context, clientId string) {
 
 func ClientLogout(clientId string) (string, int) {
 	kafkaConfig := config.GetConfig().KafkaConfig
-	client := ChatServer.Clients[clientId]
+	client := Processor.LocalServer.GetClient(clientId)
 	if client != nil {
-		if kafkaConfig.MessageMode == "channel" {
-			//ChatServer.SendClientToLogout(client)
-		} else {
-			//KafkaChatServer.SendClientToLogout(client)
+		if kafkaConfig.MessageMode == "channel" || kafkaConfig.MessageMode == "redis_pubsub" {
+			Processor.LocalServer.SendClientToLogout(client)
 		}
 
 		if err := client.Conn.Close(); err != nil {
@@ -158,4 +190,28 @@ func ClientLogout(clientId string) (string, int) {
 		close(client.SendTo)
 	}
 	return "退出成功", 0
+}
+
+func (s *Server) SendClientToLogin(client *Client) {
+	s.mutex.Lock()
+	s.Login <- client
+	s.mutex.Unlock()
+}
+
+func (s *Server) SendClientToLogout(client *Client) {
+	s.mutex.Lock()
+	s.Logout <- client
+	s.mutex.Unlock()
+}
+
+func (s *Server) SendMessageToTransmit(message []byte) {
+	s.mutex.Lock()
+	s.Transmit <- message
+	s.mutex.Unlock()
+}
+
+func (s *Server) RemoveClient(uuid string) {
+	s.mutex.Lock()
+	delete(s.clients, uuid)
+	s.mutex.Unlock()
 }

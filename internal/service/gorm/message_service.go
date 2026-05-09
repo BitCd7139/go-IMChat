@@ -1,19 +1,19 @@
 package gorm
 
 import (
+	"IMChat/internal/config"
+	"IMChat/internal/dao"
+	"IMChat/internal/dto/response"
+	"IMChat/internal/model"
+	myredis "IMChat/internal/service/redis"
+	"IMChat/pkg/constants"
+	"IMChat/pkg/zlog"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"io"
-	"kama_chat_server/internal/config"
-	"kama_chat_server/internal/dao"
-	"kama_chat_server/internal/dto/respond"
-	"kama_chat_server/internal/model"
-	myredis "kama_chat_server/internal/service/redis"
-	"kama_chat_server/pkg/constants"
-	"kama_chat_server/pkg/zlog"
 	"os"
 	"path/filepath"
 )
@@ -24,8 +24,8 @@ type messageService struct {
 var MessageService = new(messageService)
 
 // GetMessageList 获取聊天记录
-func (m *messageService) GetMessageList(userOneId, userTwoId string) (string, []respond.GetMessageListRespond, int) {
-	rspString, err := myredis.GetKeyNilIsErr("message_list_" + userOneId + "_" + userTwoId)
+func (m *messageService) GetMessageList(userOneId, userTwoId string) (string, []response.GetMessageListResponse, int) {
+	rspString, err := myredis.GetKeyNilError("message_list_" + userOneId + "_" + userTwoId)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			zlog.Info(err.Error())
@@ -35,9 +35,9 @@ func (m *messageService) GetMessageList(userOneId, userTwoId string) (string, []
 				zlog.Error(res.Error.Error())
 				return constants.SYSTEM_ERROR, nil, -1
 			}
-			var rspList []respond.GetMessageListRespond
+			var rspList []response.GetMessageListResponse
 			for _, message := range messageList {
-				rspList = append(rspList, respond.GetMessageListRespond{
+				rspList = append(rspList, response.GetMessageListResponse{
 					SendId:     message.SendId,
 					SendName:   message.SendName,
 					SendAvatar: message.SendAvatar,
@@ -64,7 +64,7 @@ func (m *messageService) GetMessageList(userOneId, userTwoId string) (string, []
 			return constants.SYSTEM_ERROR, nil, -1
 		}
 	}
-	var rsp []respond.GetMessageListRespond
+	var rsp []response.GetMessageListResponse
 	if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
 		zlog.Error(err.Error())
 	}
@@ -72,8 +72,8 @@ func (m *messageService) GetMessageList(userOneId, userTwoId string) (string, []
 }
 
 // GetGroupMessageList 获取群聊消息记录
-func (m *messageService) GetGroupMessageList(groupId string) (string, []respond.GetGroupMessageListRespond, int) {
-	rspString, err := myredis.GetKeyNilIsErr("group_messagelist_" + groupId)
+func (m *messageService) GetGroupMessageList(groupId string) (string, []response.GetGroupMessageListResponse, int) {
+	rspString, err := myredis.GetKeyNilError("group_messagelist_" + groupId)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			var messageList []model.Message
@@ -81,9 +81,9 @@ func (m *messageService) GetGroupMessageList(groupId string) (string, []respond.
 				zlog.Error(res.Error.Error())
 				return constants.SYSTEM_ERROR, nil, -1
 			}
-			var rspList []respond.GetGroupMessageListRespond
+			var rspList []response.GetGroupMessageListResponse
 			for _, message := range messageList {
-				rsp := respond.GetGroupMessageListRespond{
+				rsp := response.GetGroupMessageListResponse{
 					SendId:     message.SendId,
 					SendName:   message.SendName,
 					SendAvatar: message.SendAvatar,
@@ -98,20 +98,14 @@ func (m *messageService) GetGroupMessageList(groupId string) (string, []respond.
 				}
 				rspList = append(rspList, rsp)
 			}
-			//rspString, err := json.Marshal(rspList)
-			//if err != nil {
-			//	zlog.Error(err.Error())
-			//}
-			//if err := myredis.SetKeyEx("group_messagelist_"+groupId, string(rspString), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-			//	zlog.Error(err.Error())
-			//}
+
 			return "获取聊天记录成功", rspList, 0
 		} else {
 			zlog.Error(err.Error())
 			return constants.SYSTEM_ERROR, nil, -1
 		}
 	}
-	var rsp []respond.GetGroupMessageListRespond
+	var rsp []response.GetGroupMessageListResponse
 	if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
 		zlog.Error(err.Error())
 	}

@@ -210,7 +210,7 @@ func (u *userInfoService) GetUserList(userInfoReq request.UserInfoRequest) (stri
 		zlog.Debug("从数据库获取用户列表成功")
 		for _, rp := range rsp {
 			individualJson, _ := json.Marshal(rp)
-			err = myredis.SetKeyWithSets(cacheKey, string(individualJson), 24*time.Hour)
+			err = myredis.SetKeyWithSets(cacheKey, string(individualJson), time.Minute)
 		}
 		if err != nil {
 			zlog.Error("写入缓存失败")

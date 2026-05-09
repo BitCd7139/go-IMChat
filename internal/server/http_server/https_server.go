@@ -60,16 +60,16 @@ func init() {
 	//GE.POST("/group/getGroupMemberList", v1.GetGroupMemberList)
 	//GE.POST("/group/removeGroupMembers", v1.RemoveGroupMembers)
 
-	//GE.POST("/session/openSession", v1.OpenSession)
-	//GE.POST("/session/getUserSessionList", v1.GetUserSessionList)
-	//GE.POST("/session/getGroupSessionList", v1.GetGroupSessionList)
-	//GE.POST("/session/deleteSession", v1.DeleteSession)
-	//GE.POST("/session/checkOpenSessionAllowed", v1.CheckOpenSessionAllowed)
+	GE.POST("/session/openSession", v1.OpenSession)
+	GE.POST("/session/getUserSessionList", v1.GetUserSessionList)
+	GE.POST("/session/getGroupSessionList", v1.GetGroupSessionList)
+	GE.POST("/session/deleteSession", v1.DeleteSession)
+	GE.POST("/session/checkOpenSessionAllowed", v1.CheckOpenSessionAllowed)
 
-	//GE.POST("/message/getMessageList", v1.GetMessageList)
-	//GE.POST("/message/getGroupMessageList", v1.GetGroupMessageList)
-	//GE.POST("/message/uploadAvatar", v1.UploadAvatar)
-	//GE.POST("/message/uploadFile", v1.UploadFile)
+	GE.POST("/message/getMessageList", v1.GetMessageList)
+	GE.POST("/message/getGroupMessageList", v1.GetGroupMessageList)
+	GE.POST("/message/uploadAvatar", v1.UploadAvatar)
+	GE.POST("/message/uploadFile", v1.UploadFile)
 
 	//GE.POST("/chatroom/getCurContactListInChatRoom", v1.GetCurContactListInChatRoom)
 

@@ -143,7 +143,7 @@ func (s *Server) StartDBWorkers(workerCount int) {
 		go func(id int) {
 			zlog.Info(fmt.Sprintf("DB Worker %d 启动", id))
 			for uuid := range s.MsgAckChan {
-				// 这里的代码就是你原来的 DB 更新逻辑
+				// 这里的代码是原来的 DB 更新逻辑
 				if res := dao.GormDB.Model(&model.Message{}).
 					Where("uuid = ?", uuid).
 					Update("status", message_status_enum.Sent); res.Error != nil {

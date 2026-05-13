@@ -40,6 +40,12 @@
           </config>
         </ContributedStateBase>
       </target>
+      <target name="WSL - Ubuntu" type="wsl" uuid="2bb72a3e-2baf-4697-92eb-91bef99784b7">
+        <config>
+          <option name="distributionMsId" value="Ubuntu" />
+          <option name="projectRootOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/tmp/tmp.woPp3lXctp&#13;&#10;, stderr=}/IMChat" />
+        </config>
+      </target>
     </targets>
   </component>
 </project>

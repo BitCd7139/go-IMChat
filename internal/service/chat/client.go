@@ -40,8 +40,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-var ctx = context.Background()
-
 func (c *Client) Read() {
 	defer func() {
 		ClientLogout(c.Uuid)
@@ -51,6 +49,7 @@ func (c *Client) Read() {
 		err := c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		if err != nil {
 			// 没有心跳
+			zlog.Error("设置读超时失败: " + err.Error())
 			return
 		}
 

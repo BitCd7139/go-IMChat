@@ -251,14 +251,6 @@ func FindKeyWithSets(key string) ([]string, error) {
 	return values, nil
 }
 
-func PublicRedisKey(ctx context.Context, key string, value string) (string, error) {
-	err := redisClient.Publish(ctx, key, value).Err()
-	if err != nil {
-		return "", err
-	}
-	return key, nil
-}
-
 // PublishCtx publishes payload to a Redis Pub/Sub channel.
 func PublishCtx(ctx context.Context, channel, payload string) error {
 	return redisClient.Publish(ctx, channel, payload).Err()
